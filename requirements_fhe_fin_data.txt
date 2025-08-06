@@ -1,0 +1,78 @@
+# Core dependencies for Homomorphic Encryption Communication System
+# ================================================================
+
+# Primary FHE Library - TenSEAL (TensorFlow + Microsoft SEAL)
+# Provides Python-friendly interface for BFV and CKKS schemes
+tenseal>=0.3.14
+
+# Numerical computing and array operations
+# Used for polynomial evaluation, vector operations, and feature extraction
+numpy>=1.21.0
+
+# Standard library extensions (included in Python 3.7+, listed for completeness)
+# dataclasses - for structured data representation
+# datetime - for timestamp handling
+# hashlib - for generating record IDs
+# json - for data serialization
+# pickle - for context serialization
+# re - for regular expression operations in text preprocessing
+# typing - for type hints and annotations
+
+# Optional dependencies for enhanced functionality
+# ==============================================
+
+# For advanced sentiment analysis (instead of simple keyword matching)
+# Uncomment if you want to replace the basic sentiment scoring
+# textblob>=0.17.1
+# vaderSentiment>=3.3.2
+
+# For more sophisticated text preprocessing and NLP
+# nltk>=3.7
+# spacy>=3.4.0
+
+# For secure random number generation in cryptographic contexts
+# cryptography>=37.0.0
+
+# For performance monitoring and profiling
+# psutil>=5.8.0
+# memory-profiler>=0.60.0
+
+# For advanced data manipulation and analysis
+pandas>=1.3.0
+
+# For visualization of encryption parameters and performance metrics
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# For testing and development
+# pytest>=7.0.0
+# pytest-cov>=3.0.0
+
+# Installation Notes:
+# ===================
+#
+# 1. TenSEAL Installation:
+#    - pip install tenseal
+#    - Requires Python 3.7+ and modern C++ compiler
+#    - Pre-built wheels available for most platforms
+#    - Docker option: tenseal/tenseal:latest
+#
+# 2. If TenSEAL installation fails:
+#    - Check system requirements (CMake, C++17 compiler)
+#    - Try: pip install --upgrade pip setuptools wheel
+#    - The program includes simulation mode as fallback
+#
+# 3. For production deployment:
+#    - Use virtual environments: python -m venv venv
+#    - Pin exact versions for reproducibility
+#    - Test vector operations on target hardware
+#
+# 4. Memory Requirements:
+#    - Vector operations are memory-intensive
+#    - Minimum 8GB RAM recommended
+#    - 16GB+ RAM for large communication datasets
+#
+# 5. Performance Considerations:
+#    - TenSEAL leverages multi-threading automatically
+#    - SSD storage recommended for context serialization
+#    - Batch operations significantly improve performance
