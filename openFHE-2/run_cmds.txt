@@ -1,0 +1,8 @@
+# Core requirements
+pip install streamlit pandas numpy plotly
+
+# For real OpenFHE (if available)
+pip install openfhe-python
+
+# Additional useful packages
+pip install scipy scikit-learn

@@ -1,0 +1,8 @@
+streamlit>=1.36
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+# OpenFHE python bindings:
+# Prefer conda where possible: conda install -c conda-forge openfhe
+# Or pip (Linux/Ubuntu): pip install openfhe
+# On Windows/RHEL you may need to build from source following the official docs.

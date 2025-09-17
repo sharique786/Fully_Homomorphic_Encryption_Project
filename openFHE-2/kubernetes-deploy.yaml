@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhe-processor
+  labels:
+    app: fhe-processor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fhe-processor
+  template:
+    metadata:
+      labels:
+        app: fhe-processor
+    spec:
+      containers:
+      - name: fhe-processor
+        image: fhe-processor:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_SERVER_ADDRESS
+          value: "0.0.0.0"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: uploads-volume
+          mountPath: /app/uploads
+        - name: exports-volume
+          mountPath: /app/exports
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: fhe-data-pvc
+      - name: uploads-volume
+        persistentVolumeClaim:
+          claimName: fhe-uploads-pvc
+      - name: exports-volume
+        persistentVolumeClaim:
+          claimName: fhe-exports-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhe-processor-service
+spec:
+  selector:
+    app: fhe-processor
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8501
+  type: LoadBalancer

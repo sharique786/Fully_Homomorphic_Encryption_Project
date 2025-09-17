@@ -1,0 +1,12 @@
+streamlit>=1.22
+pandas
+numpy
+cryptography
+matplotlib
+# FHE libraries (optional; install one or more as desired)
+# OpenFHE Python wrapper: installation may require building from source on some OSes. Try:
+# pip install openfhe
+# TenSEAL:
+# pip install tenseal
+# Pyfhel:
+# pip install pyfhel

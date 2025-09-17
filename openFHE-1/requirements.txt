@@ -1,0 +1,8 @@
+streamlit>=1.25
+pandas>=2.0
+numpy>=1.25
+plotly>=5.15
+scikit-learn>=1.2
+# OpenFHE python wrapper — try pip first. If pip wheel not available on your platform,
+# build openfhe (C++) and openfhe-python from source (see instructions below).
+openfhe>=1.3.0  # try pip install openfhe. If that fails, follow the build-from-source instructions in the notes.
