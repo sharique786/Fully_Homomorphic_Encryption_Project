@@ -1,0 +1,82 @@
+# 1. Install dependencies
+pip install streamlit pandas numpy plotly tenseal
+
+# 2. Run the application
+streamlit run app.py
+
+# 3. Access at http://localhost:8501
+
+
+Common Issues & Solutions:
+Solution:
+pip uninstall tenseal
+pip install tenseal --no-cache-dir
+# Or use simulation mode in the app
+
+
+Issue: Memory Error with Large Datasets
+
+Solution:
+# In config.py, reduce batch size
+APP_CONFIG['default_batch_size'] = 50  # Instead of 100
+
+
+Issue: Slow Performance
+
+Solution:
+# Use smaller polynomial degree for testing
+parameters = {
+    'poly_modulus_degree': 4096,  # Instead of 8192
+}
+
+
+Example Use Case:
+# Scenario: Bank wants to analyze customer transactions
+# without exposing sensitive data
+
+1. Upload customer transactions (10,000 records)
+2. Encrypt sensitive columns: user_id, amount, account_number
+3. Generate BFV keys with 128-bit security
+4. Perform encrypted analysis:
+   - Count transactions per user
+   - Sum amounts by currency
+   - Filter transactions in date range
+5. Decrypt results (only aggregated data)
+6. Compare BFV vs CKKS performance
+7. Export performance report
+
+================================================
+
+What's Included in fhe_core.py:
+1. FHEKeyManager Class:
+
+✅ generate_keys() - Generate FHE keys (TenSEAL or simulated)
+✅ rotate_keys() - Key rotation with backward compatibility
+✅ export_keys() - Export keys in JSON or Base64
+✅ import_keys() - Import keys from file
+✅ _generate_tenseal_keys() - TenSEAL key generation
+✅ _generate_simulated_keys() - Simulation mode
+
+2. FHEProcessor Class:
+
+✅ encrypt_data() - Encrypt DataFrame columns
+✅ decrypt_data() - Decrypt encrypted data
+✅ perform_operation() - Homomorphic operations
+✅ aggregate_encrypted_data() - Aggregations
+✅ _encrypt_column_tenseal() - TenSEAL encryption
+✅ _encrypt_column_simulated() - Simulation mode
+✅ _decrypt_column_tenseal() - TenSEAL decryption
+✅ _decrypt_column_simulated() - Simulation mode
+✅ _perform_operation_tenseal() - TenSEAL operations
+✅ _perform_operation_simulated() - Simulation mode
+
+Key Features:
+
+🔐 Full key management lifecycle
+🔄 Automatic fallback to simulation if TenSEAL unavailable
+📊 Support for BFV and CKKS schemes
+⏱️ Performance timing for all operations
+📝 Operation logging
+🔢 Batch processing for efficiency
+
+================================================
