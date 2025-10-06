@@ -1,0 +1,30 @@
+# FHE Financial Analytics System - Requirements
+# Python 3.8 - 3.11 compatible
+
+# Core Framework
+streamlit
+
+# Data Processing
+pandas
+numpy
+
+# Visualization
+plotly
+
+# FHE Libraries
+tenseal
+# openfhe-python>=1.1.4  # Uncomment if using OpenFHE
+
+# Utilities
+python-dateutil
+typing-extensions
+
+# Optional: For better performance
+# numba>=0.57.0
+# cython>=3.0.0
+
+# Development Dependencies (optional)
+# pytest>=7.4.0
+# black>=23.7.0
+# flake8>=6.1.0
+# mypy>=1.5.0
