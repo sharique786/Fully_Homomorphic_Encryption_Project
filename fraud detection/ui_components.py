@@ -4,6 +4,7 @@ Reusable Streamlit UI components
 """
 
 import streamlit as st
+import os
 from typing import Dict, List, Any
 from config import FHE_SCHEMES, LIBRARY_OPTIONS
 
@@ -55,22 +56,96 @@ def render_sidebar() -> str:
     )
     st.session_state.selected_library = library
 
-    # Show OpenFHE path if selected
+    # Show OpenFHE configuration if selected
     if library == "OpenFHE":
+        st.sidebar.markdown("#### OpenFHE Configuration")
+
+        # Path to OpenFHE installation
         openfhe_path = st.sidebar.text_input(
-            "OpenFHE Path:",
-            value=r"C:\openfhe-development\build\bin\Release",
-            help="Path to compiled OpenFHE executable"
+            "OpenFHE Install Path:",
+            value=r"C:\openfhe-development\build\lib\Release",
+            help="Path to OpenFHE compiled libraries (where DLLs are located)"
         )
         st.session_state.openfhe_path = openfhe_path
 
-        # Check if executable exists
-        import os
-        exe_path = os.path.join(openfhe_path, "fhe_wrapper.exe")
-        if os.path.exists(exe_path):
-            st.sidebar.success("✅ OpenFHE executable found")
+        # Path to wrapper DLL
+        dll_path = st.sidebar.text_input(
+            "Wrapper DLL Path:",
+            value="openfhe_python_wrapper.dll",
+            help="Path to compiled openfhe_python_wrapper.dll"
+        )
+        st.session_state.openfhe_dll_path = dll_path
+
+        # Check if DLL exists
+        dll_full_path = dll_path
+        if not os.path.isabs(dll_path):
+            # Try multiple locations
+            search_paths = [
+                dll_path,
+                os.path.join(openfhe_path, dll_path),
+                os.path.join(os.getcwd(), dll_path),
+                os.path.join("build", "Release", dll_path)
+            ]
+
+            dll_found = False
+            for path in search_paths:
+                if os.path.exists(path):
+                    dll_full_path = path
+                    dll_found = True
+                    break
+
+            if dll_found:
+                st.sidebar.success(f"✅ Wrapper DLL found at:\n{dll_full_path}")
+            else:
+                st.sidebar.warning("⚠️ Wrapper DLL not found. Using simulation mode.")
+
+                with st.sidebar.expander("ℹ️ How to build the DLL"):
+                    st.markdown("""
+                    **Steps to build OpenFHE Python Wrapper:**
+                    
+                    1. Generate C++ wrapper code:
+                    ```python
+                    from openfhe_wrapper import generate_cpp_wrapper_code
+                    code = generate_cpp_wrapper_code()
+                    # Save as openfhe_python_wrapper.cpp
+                    ```
+                    
+                    2. Generate CMakeLists.txt:
+                    ```python
+                    from openfhe_wrapper import create_cmake_file
+                    cmake = create_cmake_file()
+                    # Save as CMakeLists.txt
+                    ```
+                    
+                    3. Build:
+                    ```cmd
+                    mkdir build && cd build
+                    cmake .. -DCMAKE_PREFIX_PATH="C:/openfhe-development/build"
+                    cmake --build . --config Release
+                    ```
+                    
+                    4. Copy DLL to project directory
+                    """)
         else:
-            st.sidebar.warning("⚠️ Executable not found. Using simulation.")
+            if os.path.exists(dll_full_path):
+                st.sidebar.success(f"✅ Wrapper DLL found")
+            else:
+                st.sidebar.warning("⚠️ Wrapper DLL not found. Using simulation mode.")
+
+        # Check OpenFHE DLLs
+        openfhe_dlls = ["OPENFHEcore.dll", "OPENFHEpke.dll", "OPENFHEbinfhe.dll"]
+        missing_dlls = []
+
+        for dll in openfhe_dlls:
+            dll_path_check = os.path.join(openfhe_path, dll)
+            if not os.path.exists(dll_path_check):
+                missing_dlls.append(dll)
+
+        if missing_dlls:
+            st.sidebar.error(f"❌ Missing OpenFHE DLLs: {', '.join(missing_dlls)}")
+            st.sidebar.caption("Ensure OpenFHE is properly compiled and path is correct")
+        else:
+            st.sidebar.info("✅ OpenFHE DLLs found")
 
     # Scheme selection based on library
     available_schemes = LIBRARY_OPTIONS[library]['schemes']
@@ -92,6 +167,13 @@ def render_sidebar() -> str:
             st.write(f"Type: {scheme_info['type']}")
             st.write(f"Precision: {scheme_info['precision']}")
 
+            if library == "OpenFHE":
+                st.write("---")
+                st.write("**OpenFHE Implementation:**")
+                st.write("✓ Uses compiled C++ libraries")
+                st.write("✓ High performance native code")
+                st.write("✓ Full OpenFHE feature support")
+
     return page
 
 
@@ -109,12 +191,19 @@ def show_welcome_screen():
     - 🔑 Comprehensive key management
     - 📈 Performance benchmarking
     
+    **OpenFHE Integration:**
+    - Uses compiled OpenFHE C++ libraries via DLL interface
+    - Native performance for encryption/decryption operations
+    - Support for BFV, BGV, and CKKS schemes
+    - Falls back to simulation mode if DLL not available
+    
     **Get Started:**
-    1. Upload or generate financial data
-    2. Select columns to encrypt
-    3. Generate or import encryption keys
-    4. Perform homomorphic operations
-    5. View results and statistics
+    1. Ensure OpenFHE Python wrapper DLL is compiled and available
+    2. Upload or generate financial data
+    3. Select columns to encrypt
+    4. Generate or import encryption keys
+    5. Perform homomorphic operations
+    6. View results and statistics
     """)
 
 
@@ -135,9 +224,17 @@ def render_key_management_section(key_manager) -> Dict[str, Any]:
     with col2:
         st.write("**Key Information**")
         if key_manager.key_metadata.get('generation_time'):
-            st.info(f"✅ Keys generated on: {key_manager.key_metadata['generation_time']}")
-            st.write(f"Scheme: {key_manager.key_metadata.get('scheme', 'N/A')}")
-            st.write(f"Library: {key_manager.key_metadata.get('library', 'N/A')}")
+            metadata = key_manager.key_metadata
+            st.info(f"✅ Keys generated on: {metadata['generation_time']}")
+            st.write(f"Scheme: {metadata.get('scheme', 'N/A')}")
+            st.write(f"Library: {metadata.get('library', 'N/A')}")
+
+            # Show if using simulation mode
+            if metadata.get('simulation'):
+                st.warning("⚠️ Running in SIMULATION mode")
+                st.caption("Compile OpenFHE wrapper DLL for real FHE operations")
+            else:
+                st.success("✅ Using real OpenFHE encryption")
         else:
             st.warning("⚠️ No keys generated yet")
 
@@ -208,6 +305,11 @@ def render_encryption_config(scheme: str) -> Dict[str, Any]:
         parameters['plain_modulus'] = plain_modulus
     elif scheme == 'CKKS':
         parameters['scale_factor'] = scale_factor
+
+    # Add info about OpenFHE
+    library = st.session_state.get('selected_library', 'Microsoft SEAL')
+    if library == 'OpenFHE':
+        st.info("🔧 Using OpenFHE with these parameters will configure the C++ library accordingly")
 
     return parameters
 
@@ -285,6 +387,14 @@ def render_key_display(keys: Dict[str, str], include_private: bool = False):
     """Render key display with copy functionality"""
     st.subheader("🔑 Generated Keys")
 
+    # Check if simulation mode
+    is_simulation = keys.get('simulation', False)
+
+    if is_simulation:
+        st.warning("⚠️ **SIMULATION MODE**: These are not real FHE keys. Compile the OpenFHE wrapper DLL for actual encryption.")
+    else:
+        st.success("✅ **REAL FHE KEYS**: Generated using OpenFHE")
+
     st.warning("⚠️ **Security Warning**: Save these keys securely. Never share private keys!")
 
     # Public Key
@@ -319,6 +429,13 @@ def render_key_display(keys: Dict[str, str], include_private: bool = False):
                 value=keys.get('evaluation_key', 'Not generated'),
                 height=100
             )
+
+    # Additional key information
+    with st.expander("ℹ️ Key Information"):
+        st.write(f"**Scheme:** {keys.get('scheme', 'N/A')}")
+        st.write(f"**Polynomial Degree:** {keys.get('poly_modulus_degree', 'N/A')}")
+        if 'message' in keys:
+            st.info(keys['message'])
 
 
 def render_alert(message: str, alert_type: str = "info"):
@@ -360,3 +477,81 @@ def render_column_selector(df, title: str = "Select Columns to Encrypt") -> List
         )
 
     return selected_numeric + selected_text
+
+
+def render_openfhe_status():
+    """Render OpenFHE status indicator"""
+    st.subheader("🔧 OpenFHE Status")
+
+    library = st.session_state.get('selected_library', 'Microsoft SEAL')
+
+    if library != 'OpenFHE':
+        st.info(f"Currently using: {library}")
+        return
+
+    # Check DLL status
+    dll_path = st.session_state.get('openfhe_dll_path', 'openfhe_python_wrapper.dll')
+    openfhe_path = st.session_state.get('openfhe_path', '')
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.write("**Wrapper DLL:**")
+        # Try to find DLL
+        dll_found = False
+        search_paths = [
+            dll_path,
+            os.path.join(openfhe_path, dll_path),
+            os.path.join(os.getcwd(), dll_path),
+        ]
+
+        for path in search_paths:
+            if os.path.exists(path):
+                st.success(f"✅ Found at: {path}")
+                dll_found = True
+                break
+
+        if not dll_found:
+            st.error("❌ Not found - Using simulation")
+
+    with col2:
+        st.write("**OpenFHE Libraries:**")
+        if os.path.exists(openfhe_path):
+            st.success(f"✅ Path valid")
+        else:
+            st.error("❌ Path not found")
+
+    # Help section
+    if not dll_found:
+        with st.expander("🛠️ Setup Instructions"):
+            st.markdown("""
+            **To enable real OpenFHE encryption:**
+            
+            1. **Generate wrapper code:**
+            ```python
+            from openfhe_wrapper import generate_cpp_wrapper_code, create_cmake_file
+            
+            # Save C++ code
+            with open('openfhe_python_wrapper.cpp', 'w') as f:
+                f.write(generate_cpp_wrapper_code())
+            
+            # Save CMake file
+            with open('CMakeLists.txt', 'w') as f:
+                f.write(create_cmake_file())
+            ```
+            
+            2. **Build the DLL:**
+            ```cmd
+            mkdir build && cd build
+            cmake .. -DCMAKE_PREFIX_PATH="C:/openfhe-development/build"
+            cmake --build . --config Release
+            copy Release\\openfhe_python_wrapper.dll ..\\
+            ```
+            
+            3. **Verify DLL loads:**
+            ```python
+            from openfhe_wrapper import OpenFHEWrapper
+            wrapper = OpenFHEWrapper()
+            # Check if wrapper.lib is not None
+            ```
+            """)

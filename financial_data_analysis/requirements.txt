@@ -1,0 +1,10 @@
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+tenseal>=0.3.14
+plotly>=5.17.0
+python-dateutil>=2.8.2
+
+# Note: OpenFHE requires manual installation
+# Follow instructions at: https://openfhe-development.readthedocs.io/en/latest/
+# For Windows: Build from source or use pre-compiled binaries
