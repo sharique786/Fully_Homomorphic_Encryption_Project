@@ -16,14 +16,8 @@ class OpenFHEWrapper:
     """Python wrapper for OpenFHE C++ library with three operation modes"""
 
     def __init__(self):
-        # Platform-specific paths
-        if sys.platform == 'win32':
-            self.openfhe_path = r"C:\Program Files (x86)\OpenFHE"
-            self.build_path = r"C:\Users\alish\Workspaces\Python\openfhe-development"
-        else:
-            # Linux/Unix paths
-            self.openfhe_path = os.environ.get('OPENFHE_ROOT', '/usr/local/openfhe')
-            self.build_path = os.path.expanduser('~/openfhe-development')
+        self.openfhe_path = r"C:\Program Files (x86)\OpenFHE"
+        self.build_path = r"C:\Users\alish\Workspaces\Python\openfhe-development"
 
         # Library handles
         self.lib = None
