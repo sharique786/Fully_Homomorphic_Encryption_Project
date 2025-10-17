@@ -28,14 +28,10 @@ RUN git clone https://github.com/openfheorg/openfhe-development.git && \
     cd openfhe-development && mkdir build && cd build && \
     cmake .. \
         -DCMAKE_BUILD_TYPE=Release \
-#        -DCMAKE_CXX_FLAGS="-O1 -fno-inline-functions -fno-lto" \
-#        -DBUILD_SHARED_LIBS=ON \
         -DWITH_EXAMPLES=OFF \
         -DCMAKE_INSTALL_PREFIX=/usr/local/openfhe && \
-    make -j1 && \
+    make -j$(nproc) && \
     make install
-
-
 
 # ============================================================
 # Stage 2: Application Runtime
@@ -59,12 +55,11 @@ RUN dnf install -y \
 COPY --from=openfhe-builder /usr/local/openfhe /usr/local/openfhe
 COPY --from=openfhe-builder /opt/openfhe-development/src /usr/local/openfhe/src
 
-# Set environment variables for OpenFHE
-ENV OPENFHE_ROOT=/usr/local/openfhe
-ENV LD_LIBRARY_PATH=/usr/local/openfhe/lib:$LD_LIBRARY_PATH
-ENV PATH=/usr/local/openfhe/bin:$PATH
-ENV PYTHONPATH=/app:$PYTHONPATH
-
+# Set environment variables for OpenFHE (fix the undefined variable warnings)
+ENV OPENFHE_ROOT=/usr/local/openfhe \
+    LD_LIBRARY_PATH=/usr/local/openfhe/lib \
+    PATH=/usr/local/openfhe/bin:${PATH} \
+    PYTHONPATH=/app
 
 # Create app directory
 WORKDIR /app
@@ -87,6 +82,10 @@ COPY ui/ ./ui/
 RUN mkdir -p /app/data /app/logs /app/temp && \
     chmod -R 755 /app
 
+# Set user (non-root for security) - do this before changing ownership
+RUN useradd -m -u 1000 fheuser && \
+    chown -R fheuser:fheuser /app
+
 # Expose Streamlit port
 EXPOSE 8501
 
@@ -94,9 +93,7 @@ EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
-# Set user (non-root for security)
-RUN useradd -m -u 1000 fheuser && \
-    chown -R fheuser:fheuser /app
+# Switch to non-root user
 USER fheuser
 
 # Run the application
