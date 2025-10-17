@@ -272,7 +272,34 @@ For questions or issues:
 3. Consult official FHE library documentation
 
 ---
+## 📧 Docker
 
-**Version**: 1.0.0  
-**Last Updated**: October 2024  
-**Status**: Production-Ready for Educational/Research Use
+# Powershell commands to manage Docker container and image
+# Stop and remove the container
+docker stop openfhe-test
+docker rm openfhe-test
+
+# Remove the image
+docker rmi fhe-financial-processor
+
+# Prune dangling images
+docker image prune -f
+
+
+docker build --no-cache -t fhe-financial-processor .
+
+# Run directly with docker command
+docker run -d --name openfhe-test -p 8501:8501 fhe-financial-processor
+
+# Check logs immediately
+docker logs -f openfhe-test
+
+docker run -d --name openfhe-test -p 8501:8501 fhe-financial-processor streamlit run main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true
+
+==========
+# Command prompt commands to manage Docker container and image
+
+docker stop openfhe-test && docker rm openfhe-test
+docker build --no-cache -t fhe-financial-processor .
+docker run -d --name openfhe-test -p 8501:8501 fhe-financial-processor
+docker logs -f openfhe-test
