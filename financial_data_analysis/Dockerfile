@@ -24,15 +24,12 @@ RUN dnf install -y \
 WORKDIR /opt
 
 # Clone and build OpenFHE
-RUN apt-get update && apt-get install -y clang lld && \
-    update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
-    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100 && \
-    git clone https://github.com/openfheorg/openfhe-development.git && \
+RUN git clone https://github.com/openfheorg/openfhe-development.git && \
     cd openfhe-development && mkdir build && cd build && \
     cmake .. \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_CXX_FLAGS="-O1 -fno-inline-functions -fno-lto" \
-        -DBUILD_SHARED_LIBS=ON \
+#        -DCMAKE_CXX_FLAGS="-O1 -fno-inline-functions -fno-lto" \
+#        -DBUILD_SHARED_LIBS=ON \
         -DWITH_EXAMPLES=OFF \
         -DCMAKE_INSTALL_PREFIX=/usr/local/openfhe && \
     make -j1 && \
