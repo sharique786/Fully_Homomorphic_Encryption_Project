@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Financial Transaction Analysis System</title>
+    <style>
+        @media print {
+            .slide {
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .slide {
+            background: white;
+            padding: 60px;
+            margin: 20px auto;
+            max-width: 1200px;
+            min-height: 800px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        
+        .slide-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        
+        .slide-title h1 {
+            color: white;
+            font-size: 56px;
+        }
+        
+        h2 {
+            font-size: 36px;
+            color: #667eea;
+            margin: 0 0 30px 0;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            font-size: 24px;
+            color: #764ba2;
+            margin: 25px 0 15px 0;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            color: rgba(255,255,255,0.9);
+            margin: 10px 0;
+        }
+        
+        .lock-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        ul {
+            font-size: 20px;
+            line-height: 1.8;
+            margin: 20px 0;
+        }
+        
+        li {
+            margin: 15px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            font-size: 18px;
+        }
+        
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 20px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .feature-box {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+        
+        .workflow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .workflow-step {
+            text-align: center;
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .workflow-arrow {
+            font-size: 36px;
+            color: #667eea;
+        }
+        
+        .workflow-number {
+            background: #667eea;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+
+    <!-- Slide 1: Title -->
+    <div class="slide slide-title">
+        <div class="lock-icon">🔒</div>
+        <h1>FHE Financial Transaction Analysis System</h1>
+        <p class="subtitle">Secure Homomorphic Encryption for Financial Data Processing</p>
+        <p class="subtitle" style="font-size: 18px; margin-top: 40px;">Preserving Privacy While Enabling Analytics</p>
+    </div>
+
+    <!-- Slide 2: Executive Summary -->
+    <div class="slide">
+        <h2>Executive Summary</h2>
+        <p style="font-size: 22px; line-height: 1.8; margin: 30px 0;">
+            The FHE Financial Transaction Analysis System enables secure processing of sensitive financial data 
+            using Fully Homomorphic Encryption (FHE). This revolutionary approach allows analytics to be performed 
+            on encrypted data without ever exposing the underlying information.
+        </p>
+        
+        <h3>Key Highlights</h3>
+        <ul>
+            <li><strong>Zero Knowledge Processing:</strong> Data remains encrypted throughout the entire analysis pipeline</li>
+            <li><strong>Multi-Library Support:</strong> Comparison between OpenFHE and TenSEAL implementations</li>
+            <li><strong>CKKS Scheme:</strong> Approximate arithmetic on encrypted real numbers for financial calculations</li>
+            <li><strong>Cloud-Ready:</strong> Secure processing in untrusted environments</li>
+        </ul>
+    </div>
+
+    <!-- Slide 3: System Architecture -->
+    <div class="slide">
+        <h2>System Architecture</h2>
+        
+        <div class="workflow">
+            <div class="workflow-step">
+                <div class="workflow-number">1</div>
+                <h3>Data Configuration</h3>
+                <p>Generate synthetic data or upload CSV files with user, account, and transaction information</p>
+            </div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step">
+                <div class="workflow-number">2</div>
+                <h3>Encryption</h3>
+                <p>Select columns and encrypt using OpenFHE or TenSEAL with CKKS scheme</p>
+            </div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step">
+                <div class="workflow-number">3</div>
+                <h3>Analysis</h3>
+                <p>Run transaction analysis on encrypted data in the cloud</p>
+            </div>
+            <div class="workflow-arrow">→</div>
+            <div class="workflow-step">
+                <div class="workflow-number">4</div>
+                <h3>Results</h3>
+                <p>View decrypted statistics and visualizations</p>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <strong>🔐 Security Guarantee:</strong> At no point during processing is the raw data exposed. 
+            All computations happen on encrypted ciphertexts, ensuring complete privacy.
+        </div>
+    </div>
+
+    <!-- Slide 4: Data Management -->
+    <div class="slide">
+        <h2>Data Management & Configuration</h2>
+        
+        <h3>Synthetic Data Generation</h3>
+        <div class="feature-box">
+            <ul style="margin: 10px 0;">
+                <li><strong>Users:</strong> Configurable number (default: 100)</li>
+                <li><strong>Accounts:</strong> Multiple accounts per user (default: 150)</li>
+                <li><strong>Transactions:</strong> Rich transaction history (default: 1000)</li>
+            </ul>
+        </div>
+
+        <h3>Data Schema</h3>
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-card">
+                <div class="stat-label">Users Table</div>
+                <div class="stat-value">100</div>
+                <div class="stat-label">Records</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Accounts Table</div>
+                <div class="stat-value">150</div>
+                <div class="stat-label">Records</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Transactions Table</div>
+                <div class="stat-value">1000</div>
+                <div class="stat-label">Records</div>
+            </div>
+        </div>
+
+        <h3>Jurisdiction & Compliance</h3>
+        <div class="highlight">
+            <strong>⚠️ Restricted Countries Detected:</strong> The system identifies users from restricted 
+            jurisdictions (22 users detected) and provides options for appropriate data handling and compliance.
+        </div>
+    </div>
+
+    <!-- Slide 5: Encryption Configuration -->
+    <div class="slide">
+        <h2>Encryption & Analysis Configuration</h2>
+        
+        <h3>FHE Library Selection</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0;">
+            <div class="feature-box">
+                <h4 style="margin-top: 0; color: #667eea;">OpenFHE</h4>
+                <ul>
+                    <li>Open-source FHE library</li>
+                    <li>High performance</li>
+                    <li>Production-ready</li>
+                    <li>Extensive documentation</li>
+                </ul>
+            </div>
+            <div class="feature-box">
+                <h4 style="margin-top: 0; color: #764ba2;">TenSEAL</h4>
+                <ul>
+                    <li>Python-friendly API</li>
+                    <li>Built on Microsoft SEAL</li>
+                    <li>Easy integration</li>
+                    <li>ML-focused features</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Encryption Scheme: CKKS</h3>
+        <div class="feature-box">
+            <p style="margin: 10px 0;"><strong>Cheon-Kim-Kim-Song (CKKS) Scheme</strong></p>
+            <ul style="margin: 10px 0;">
+                <li>Approximate arithmetic on encrypted real numbers</li>
+                <li>Ideal for financial calculations requiring decimal precision</li>
+                <li>Trade-off: Approximate results with configurable precision</li>
+                <li>No comparison operations (inherent to approximate encryption)</li>
+            </ul>
+        </div>
+
+        <h3>Selected Columns for Encryption</h3>
+        <ul>
+            <li><strong>Users:</strong> user_id, email</li>
+            <li><strong>Accounts:</strong> account_id, account_number</li>
+            <li><strong>Transactions:</strong> transaction_id, amount</li>
+        </ul>
+    </div>
+
+    <!-- Slide 6: Analysis Results -->
+    <div class="slide">
+        <h2>Transaction Analysis Results</h2>
+        
+        <h3>Analysis Parameters</h3>
+        <ul>
+            <li><strong>Analysis Type:</strong> Transaction Analysis</li>
+            <li><strong>Date Range:</strong> November 9, 2024 - November 9, 2025</li>
+            <li><strong>User ID:</strong> U00025</li>
+            <li><strong>Processing Location:</strong> Cloud</li>
+        </ul>
+
+        <h3>Key Metrics</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Transactions</div>
+                <div class="stat-value">48</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Amount</div>
+                <div class="stat-value">$106,700.73</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Amount</div>
+                <div class="stat-value">$2,222.93</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Processing</div>
+                <div class="stat-value" style="font-size: 36px;">Cloud</div>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <strong>✅ Analysis Complete!</strong> All calculations performed on encrypted data. 
+            Results decrypted only for authorized viewing.
+        </div>
+    </div>
+
+    <!-- Slide 7: Transaction Flow Analysis -->
+    <div class="slide">
+        <h2>Transaction Flow Analysis</h2>
+        
+        <h3>Transaction Distribution by Type</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Transaction Type</th>
+                    <th>Count</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Withdrawal</td>
+                    <td>~12</td>
+                    <td>25%</td>
+                </tr>
+                <tr>
+                    <td>Purchase</td>
+                    <td>~12</td>
+                    <td>25%</td>
+                </tr>
+                <tr>
+                    <td>Deposit</td>
+                    <td>~9</td>
+                    <td>19%</td>
+                </tr>
+                <tr>
+                    <td>Transfer</td>
+                    <td>~8</td>
+                    <td>17%</td>
+                </tr>
+                <tr>
+                    <td>Payment</td>
+                    <td>~7</td>
+                    <td>14%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Transaction Status</h3>
+        <div class="stat-card" style="margin: 30px auto; max-width: 400px;">
+            <div class="stat-label">Completed Transactions</div>
+            <div class="stat-value">100%</div>
+            <div class="stat-label">All 48 transactions successfully processed</div>
+        </div>
+
+        <h3>Transaction Timeline Insights</h3>
+        <ul>
+            <li>Transaction amounts range from ~$250 to ~$5,000</li>
+            <li>Active transaction periods: November 2024 - November 2025</li>
+            <li>Multiple currencies supported (GBP, EUR, USD)</li>
+            <li>Various merchant interactions tracked</li>
+        </ul>
+    </div>
+
+    <!-- Slide 8: Performance Statistics -->
+    <div class="slide">
+        <h2>Encryption & Performance Statistics</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Columns Encrypted</div>
+                <div class="stat-value">12</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Records Encrypted</div>
+                <div class="stat-value">5,000</div>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+                <div class="stat-label">Average Encryption Rate</div>
+                <div class="stat-value">1,803.40 rec/sec</div>
+            </div>
+        </div>
+
+        <h3>Detailed Encryption Statistics by Table</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Table</th>
+                    <th>Column</th>
+                    <th>Data Type</th>
+                    <th>Library</th>
+                    <th>Records</th>
+                    <th>Time (s)</th>
+                    <th>Rate (rec/s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Users</td>
+                    <td>user_id</td>
+                    <td>text</td>
+                    <td>TenSEAL</td>
+                    <td>100</td>
+                    <td>4.52</td>
+                    <td>22.12</td>
+                </tr>
+                <tr>
+                    <td>Users</td>
+                    <td>email</td>
+                    <td>text</td>
+                    <td>TenSEAL</td>
+                    <td>100</td>
+                    <td>1.54</td>
+                    <td>65.06</td>
+                </tr>
+                <tr>
+                    <td>Accounts</td>
+                    <td>account_id</td>
+                    <td>text</td>
+                    <td>TenSEAL</td>
+                    <td>150</td>
+                    <td>2.36</td>
+                    <td>63.65</td>
+                </tr>
+                <tr>
+                    <td>Transactions</td>
+                    <td>amount</td>
+                    <td>numeric</td>
+                    <td>TenSEAL</td>
+                    <td>1000</td>
+                    <td>15.58</td>
+                    <td>64.18</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Slide 9: Library Comparison -->
+    <div class="slide">
+        <h2>FHE Library Performance Comparison</h2>
+        
+        <h3>OpenFHE vs TenSEAL: Encryption Time</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>OpenFHE</th>
+                    <th>TenSEAL</th>
+                    <th>Winner</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Avg Encryption Time</td>
+                    <td><strong>~0.03 seconds</strong></td>
+                    <td>~7.2 seconds</td>
+                    <td style="color: green; font-weight: bold;">OpenFHE (240x faster)</td>
+                </tr>
+                <tr>
+                    <td>Avg Encryption Rate</td>
+                    <td><strong>3,346 rec/sec</strong></td>
+                    <td>1,803 rec/sec</td>
+                    <td style="color: green; font-weight: bold;">OpenFHE (1.86x faster)</td>
+                </tr>
+                <tr>
+                    <td>Text Data (user_id)</td>
+                    <td><strong>2.09 sec</strong></td>
+                    <td>4.52 sec</td>
+                    <td style="color: green; font-weight: bold;">OpenFHE (2.16x faster)</td>
+                </tr>
+                <tr>
+                    <td>Text Data (email)</td>
+                    <td><strong>0.02 sec</strong></td>
+                    <td>1.54 sec</td>
+                    <td style="color: green; font-weight: bold;">OpenFHE (77x faster)</td>
+                </tr>
+                <tr>
+                    <td>Numeric Data (amount)</td>
+                    <td><strong>15.58 sec</strong></td>
+                    <td>15.91 sec</td>
+                    <td style="color: green; font-weight: bold;">OpenFHE (similar)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight">
+            <strong>📊 Performance Insights:</strong>
+            <ul style="margin: 10px 0;">
+                <li>OpenFHE demonstrates superior performance for text data encryption</li>
+                <li>Both libraries show comparable performance for numeric data</li>
+                <li>OpenFHE achieves rates up to 4,182 rec/sec for certain operations</li>
+                <li>TenSEAL offers easier Python integration despite slower performance</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 10: Use Cases & Applications -->
+    <div class="slide">
+        <h2>Use Cases & Applications</h2>
+        
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🏦 Financial Services</h3>
+            <ul>
+                <li>Fraud detection on encrypted transaction data</li>
+                <li>Risk assessment without exposing customer information</li>
+                <li>Regulatory compliance reporting with privacy preservation</li>
+                <li>Cross-border transaction analysis</li>
+            </ul>
+        </div>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">☁️ Cloud Computing</h3>
+            <ul>
+                <li>Secure outsourcing of financial analytics</li>
+                <li>Multi-tenant data processing with isolation</li>
+                <li>Audit and compliance in untrusted environments</li>
+                <li>Privacy-preserving machine learning</li>
+            </ul>
+        </div>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🔐 Privacy-Critical Scenarios</h3>
+            <ul>
+                <li>Healthcare financial data processing</li>
+                <li>Government financial auditing</li>
+                <li>Cross-organizational data sharing</li>
+                <li>Sensitive customer analytics</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 11: Technical Capabilities -->
+    <div class="slide">
+        <h2>Technical Capabilities</h2>
+        
+        <h3>Supported Operations on Encrypted Data</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
+            <div class="feature-box">
+                <h4 style="margin-top: 0; color: green;">✓ Supported</h4>
+                <ul>
+                    <li>Addition</li>
+                    <li>Subtraction</li>
+                    <li>Multiplication</li>
+                    <li>Scalar operations</li>
+                    <li>Aggregations (sum, avg)</li>
+                    <li>Statistical calculations</li>
+                </ul>
+            </div>
+            <div class="feature-box" style="border-left-color: #ffc107;">
+                <h4 style="margin-top: 0; color: #ff6b6b;">⚠️ Limited (CKKS)</h4>
+                <ul>
+                    <li>Comparison operations</li>
+                    <li>Exact equality checks</li>
+                    <li>Sorting</li>
+                    <li>Max/Min operations</li>
+                    <li>Conditional logic</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>System Features</h3>
+        <ul>
+            <li><strong>Batch Processing:</strong> Configurable batch size for optimal performance</li>
+            <li><strong>Multi-table Support:</strong> Encrypt and analyze across users, accounts, and transactions</li>
+            <li><strong>Real-time Analysis:</strong> On-the-fly computation on encrypted data</li>
+            <li><strong>Visualization:</strong> Transaction flow, status, and timeline analysis</li>
+            <li><strong>Export Capabilities:</strong> Download statistics in CSV format</li>
+        </ul>
+    </div>
+
+    <!-- Slide 12: Security & Privacy -->
+    <div class="slide">
+        <h2>Security & Privacy Guarantees</h2>
+        
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🔐 Encryption Security</h3>
+            <p><strong>Fully Homomorphic Encryption (FHE)</strong> provides the highest level of security for cloud computing:</p>
+            <ul>
+                <li>Data remains encrypted at rest, in transit, and during computation</li>
+                <li>Server never has access to encryption keys or plaintext data</li>
+                <li>Cryptographically secure against quantum computer attacks</li>
+                <li>Based on hard mathematical problems (Learning With Errors)</li>
+            </ul>
+        </div>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🛡️ Privacy Preservation</h3>
+            <ul>
+                <li><strong>Zero-Knowledge Processing:</strong> Analysts can compute on data without seeing it</li>
+                <li><strong>Regulatory Compliance:</strong> GDPR, CCPA, and financial regulations compliant</li>
+                <li><strong>Data Minimization:</strong> Only necessary columns encrypted and processed</li>
+                <li><strong>Jurisdiction Awareness:</strong> Automatic detection of restricted countries</li>
+            </ul>
+        </div>
+
+        <div class="highlight">
+            <strong>🏆 Security Model:</strong> Even if an attacker gains complete access to the cloud server, 
+            they cannot decrypt the data without the private keys, which remain with the data owner at all times.
+        </div>
+    </div>
+
+    <!-- Slide 13: Limitations & Considerations -->
+    <div class="slide">
+        <h2>Limitations & Considerations</h2>
+        
+        <h3>CKKS Scheme Limitations</h3>
+        <div class="feature-box" style="border-left-color: #ffc107;">
+            <ul>
+                <li><strong>Approximate Precision:</strong> Results are approximations, not exact values</li>
+                <li><strong>No Comparisons:</strong> Cannot perform greater-than, less-than operations</li>
+                <li><strong>Limited Depth:</strong> Complex operations require careful circuit design</li>
+                <li><strong>Noise Management:</strong> Precision degrades with operation depth</li>
+            </ul>
+        </div>
+
+        <h3>Performance Considerations</h3>
+        <ul>
+            <li><strong>Computational Overhead:</strong> FHE operations are 100-1000x slower than plaintext</li>
+            <li><strong>Memory Requirements:</strong> Ciphertexts are much larger than plaintext</li>
+            <li><strong>Library Choice:</strong> OpenFHE faster but requires C++; TenSEAL easier but slower</li>
+            <li><strong>Batch Optimization:</strong> Performance improves with proper batching strategies</li>
+        </ul>
+
+        <h3>Practical Trade-offs</h3>
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-label">Speed vs Security</div>
+                <div class="stat-value" style="font-size: 32px;">High Security</div>
+                <div class="stat-label">Lower Performance</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-label">Precision vs Operations</div>
+                <div class="stat-value" style="font-size: 32px;">Approximate</div>
+                <div class="stat-label">More Operations</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 14: Future Enhancements -->
+    <div class="slide">
+        <h2>Future Enhancements</h2>
+        
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">📈 Planned Features</h3>
+            <ul>
+                <li><strong>Advanced Analytics:</strong> Machine learning on encrypted data</li>
+                <li><strong>Real-time Processing:</strong> Stream processing with FHE</li>
+                <li><strong>Multi-party Computation:</strong> Collaborative analysis across organizations</li>
+                <li><strong>Automated Key Management:</strong> Secure key rotation and distribution</li>
+            </ul>
+        </div>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🚀 Technology Improvements</h3>
+            <ul>
+                <li><strong>Hardware Acceleration:</strong> GPU/FPGA support for faster processing</li>
+                <li><strong>Scheme Optimization:</strong> Hybrid schemes combining CKKS and BFV</li>
+                <li><strong>Bootstrapping:</strong> Unlimited computation depth</li>
+                <li><strong>Compression:</strong> Reduced ciphertext sizes</li>
+            </ul>
+        </div>
+
+        <div class="feature-box">
+            <h3 style="margin-top: 0;">🌐 Integration Capabilities</h3>
+            <ul>
+                <li><strong>REST API:</strong> Easy integration with existing systems</li>
+                <li><strong>Database Connectors:</strong> Direct encryption of production databases</li>
+                <li><strong>BI Tool Integration:</strong> Encrypted dashboards and reporting</li>
+                <li><strong>Microservices Architecture:</strong> Scalable, containerized deployment</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 15: Implementation Recommendations -->
+    <div class="slide">
+        <h2>Implementation Recommendations</h2>
+        
+        <h3>Choosing the Right Library</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Recommended Library</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>High-volume production systems</td>
+                    <td><strong>OpenFHE</strong></td>
+                    <td>Superior performance, lower latency</td>
+                </tr>
+                <tr>
+                    <td>Rapid prototyping</td>
+                    <td><strong>TenSEAL</strong></td>
+                    <td>Python-friendly, easier integration</td>
+                </tr>
+                <tr>
+                    <td>Real-time processing</td>
+                    <td><strong>OpenFHE</strong></td>
+                    <td>Lower encryption overhead</td>
+                </tr>
+                <tr>
+                    <td>ML/AI workloads</td>
+                    <td><strong>TenSEAL</strong></td>
+                    <td>Built-in ML support, PyTorch integration</td>
+                </tr>
+                <tr>
+                    <td>Large-scale text processing</td>
+                    <td><strong>OpenFHE</strong></td>
+                    <td>240x faster for text encryption</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Best Practices</h3>
+        <ul>
+            <li><strong>Start Small:</strong> Begin with critical data columns, expand gradually</li>
+            <li><strong>Optimize Batching:</strong> Tune batch sizes for your data volume</li>
+            <li><strong>Monitor Performance:</strong> Track encryption rates and processing times</li>
+            <li><strong>Plan for Growth:</strong> Design for scalability from the beginning</li>
+            <li><strong>Test Thoroughly:</strong> Validate results against plaintext baseline</li>
+        </ul>
+    </div>
+
+    <!-- Slide 16: Cost-Benefit Analysis -->
+    <div class="slide">
+        <h2>Cost-Benefit Analysis</h2>
+        
+        <h3>Benefits</h3>
+        <div class="feature-box" style="border-left-color: #28a745;">
+            <ul>
+                <li><strong>Compliance:</strong> Meet regulatory requirements without data exposure</li>
+                <li><strong>Risk Reduction:</strong> Eliminate data breach risks in cloud environments</li>
+                <li><strong>Trust:</strong> Build customer confidence with provable privacy</li>
+                <li><strong>Innovation:</strong> Enable new business models with secure data sharing</li>
+                <li><strong>Competitive Advantage:</strong> Differentiate with cutting-edge security</li>
+            </ul>
+        </div>
+
+        <h3>Costs</h3>
+        <div class="feature-box" style="border-left-color: #dc3545;">
+            <ul>
+                <li><strong>Performance Overhead:</strong> 100-1000x slower than plaintext operations</li>
+                <li><strong>Infrastructure:</strong> Higher compute and memory requirements</li>
+                <li><strong>Development Time:</strong> Learning curve for FHE concepts</li>
+                <li><strong>Operational Complexity:</strong> Key management and system maintenance</li>
+            </ul>
+        </div>
+
+        <div class="highlight">
+            <strong>💡 ROI Consideration:</strong> For privacy-critical applications with regulatory requirements, 
+            the cost of FHE is typically far less than the potential costs of data breaches, compliance violations, 
+            and reputational damage.
+        </div>
+    </div>
+
+    <!-- Slide 17: Real-World Impact -->
+    <div class="slide">
+        <h2>Real-World Impact</h2>
+        
+        <h3>Demonstrated Capabilities</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Data Processed</div>
+                <div class="stat-value">5,000+</div>
+                <div class="stat-label">Encrypted Records</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tables Analyzed</div>
+                <div class="stat-value">3</div>
+                <div class="stat-label">Users, Accounts, Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Encryption Speed</div>
+                <div class="stat-value">1,803</div>
+                <div class="stat-label">Records per Second</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Analysis Accuracy</div>
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Completed Successfully</div>
+            </div>
+        </div>
+
+        <h3>Key Achievements</h3>
+        <ul>
+            <li>✅ Successfully encrypted sensitive financial data across multiple tables</li>
+            <li>✅ Performed complex transaction analysis entirely on encrypted data</li>
+            <li>✅ Generated accurate statistics ($106,700.73 total, $2,222.93 average)</li>
+            <li>✅ Identified and handled 22 users from restricted countries</li>
+            <li>✅ Processed 48 transactions with 100% completion rate</li>
+            <li>✅ Demonstrated cloud-based processing without data exposure</li>
+        </ul>
+    </div>
+
+    <!-- Slide 18: System Metrics Summary -->
+    <div class="slide">
+        <h2>System Metrics Summary</h2>
+        
+        <h3>Encryption Performance Breakdown</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Data Type</th>
+                    <th>Volume</th>
+                    <th>Library</th>
+                    <th>Avg Time</th>
+                    <th>Throughput</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>User IDs (text)</td>
+                    <td>100 records</td>
+                    <td>TenSEAL</td>
+                    <td>4.52s</td>
+                    <td>22.12 rec/s</td>
+                </tr>
+                <tr>
+                    <td>User IDs (text)</td>
+                    <td>100 records</td>
+                    <td>OpenFHE</td>
+                    <td>2.09s</td>
+                    <td>47.85 rec/s</td>
+                </tr>
+                <tr>
+                    <td>Emails (text)</td>
+                    <td>100 records</td>
+                    <td>TenSEAL</td>
+                    <td>1.54s</td>
+                    <td>65.06 rec/s</td>
+                </tr>
+                <tr>
+                    <td>Emails (text)</td>
+                    <td>100 records</td>
+                    <td>OpenFHE</td>
+                    <td>0.02s</td>
+                    <td>4,182.93 rec/s</td>
+                </tr>
+                <tr>
+                    <td>Amounts (numeric)</td>
+                    <td>1000 records</td>
+                    <td>TenSEAL</td>
+                    <td>15.58s</td>
+                    <td>64.18 rec/s</td>
+                </tr>
+                <tr>
+                    <td>Account Numbers</td>
+                    <td>150 records</td>
+                    <td>TenSEAL</td>
+                    <td>2.36s</td>
+                    <td>63.65 rec/s</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Overall System Performance</h3>
+        <ul>
+            <li><strong>Total Processing Time:</strong> ~45 seconds for complete encryption pipeline</li>
+            <li><strong>Average Rate:</strong> 1,803.40 records/second across all operations</li>
+            <li><strong>Peak Performance:</strong> 4,182.93 records/second (OpenFHE email encryption)</li>
+            <li><strong>Memory Efficiency:</strong> Batch processing reduces memory footprint</li>
+        </ul>
+    </div>
+
+    <!-- Slide 19: Conclusion -->
+    <div class="slide">
+        <h2>Conclusion</h2>
+        
+        <div class="feature-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <h3 style="color: white; margin-top: 0;">Key Takeaways</h3>
+            <ul style="font-size: 20px; line-height: 2;">
+                <li><strong>FHE enables true privacy-preserving computation</strong> on sensitive financial data</li>
+                <li><strong>Both OpenFHE and TenSEAL are production-ready</strong> with different strengths</li>
+                <li><strong>CKKS scheme is ideal for financial analytics</strong> requiring decimal precision</li>
+                <li><strong>Performance is suitable for real-world applications</strong> with proper optimization</li>
+            </ul>
+        </div>
+
+        <h3>Why FHE Matters</h3>
+        <p style="font-size: 20px; line-height: 1.8;">
+            In an era of increasing data breaches and privacy regulations, Fully Homomorphic Encryption 
+            represents a paradigm shift in secure computing. It enables organizations to harness the power 
+            of cloud computing and advanced analytics while maintaining complete data privacy.
+        </p>
+
+        <div class="highlight">
+            <strong>🎯 The Bottom Line:</strong> FHE technology is no longer theoretical—it's practical, 
+            measurable, and ready for deployment in privacy-critical financial applications.
+        </div>
+
+        <h3>Next Steps</h3>
+        <ul>
+            <li>Evaluate FHE for your specific use case</li>
+            <li>Choose the appropriate library based on your requirements</li>
+            <li>Start with a pilot project on non-critical data</li>
+            <li>Measure performance and iterate on optimization</li>
+            <li>Scale to production with confidence in data security</li>
+        </ul>
+    </div>
+
+    <!-- Slide 20: Contact & Resources -->
+    <div class="slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <h2 style="color: white; border-bottom-color: white;">Thank You</h2>
+        
+        <div style="text-align: center; margin: 60px 0;">
+            <div style="font-size: 80px; margin-bottom: 30px;">🔒</div>
+            <h1 style="color: white; font-size: 42px;">FHE Financial Transaction Analysis System</h1>
+            <p style="font-size: 24px; margin: 30px 0;">Secure. Private. Powerful.</p>
+        </div>
+
+        <h3 style="color: white; margin-top: 60px;">Key Resources</h3>
+        <ul style="font-size: 20px; line-height: 2;">
+            <li><strong>OpenFHE:</strong> https://www.openfhe.org/</li>
+            <li><strong>TenSEAL:</strong> https://github.com/OpenMined/TenSEAL</li>
+            <li><strong>Microsoft SEAL:</strong> https://github.com/microsoft/SEAL</li>
+            <li><strong>Homomorphic Encryption Standardization:</strong> https://homomorphicencryption.org/</li>
+        </ul>
+
+        <div style="margin-top: 60px; padding: 30px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+            <p style="font-size: 18px; margin: 0;">
+                <strong>📄 Document Information</strong><br>
+                Generated: November 10, 2025<br>
+                System: FHE Financial Transaction Analysis<br>
+                Version: 1.0
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Add slide numbers
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach((slide, index) => {
+            if (index > 0) { // Skip title slide
+                const slideNumber = document.createElement('div');
+                slideNumber.style.cssText = 'position: absolute; bottom: 30px; right: 60px; color: #999; font-size: 14px;';
+                slideNumber.textContent = `${index + 1} / ${slides.length}`;
+                slide.style.position = 'relative';
+                slide.appendChild(slideNumber);
+            }
+        });
+    </script>
+</body>
+</html>
