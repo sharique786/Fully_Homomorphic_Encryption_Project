@@ -1,6 +1,5 @@
 [global]
 developmentMode = false
-logLevel = "info"
 
 [server]
 port = 8501
