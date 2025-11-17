@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+QUICKSTART.md
+TESTING_GUIDE.md
+PROJECT_SUMMARY.md
+*.md
+
+# Test files
+test/
+tests/
+*.test.py
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Data files (don't include in image)
+data/
+*.csv
+*.xlsx
+*.xls
+
+# Keys (security)
+*.key
+*.pem
+keys/

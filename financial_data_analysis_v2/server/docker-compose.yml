@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  fhe-server:
+    image: your-company.jfrog.io/fhe-docker/fhe-server:1.0.0
+    container_name: fhe-server
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+    networks:
+      - fhe-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  fhe-network:
+    driver: bridge

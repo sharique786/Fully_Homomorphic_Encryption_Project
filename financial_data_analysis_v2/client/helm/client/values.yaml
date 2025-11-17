@@ -1,0 +1,33 @@
+global:
+  namespace: fhe-system
+  imagePullSecrets:
+    - name: artifactory-secret
+  artifactory:
+    registry: your-company.jfrog.io
+    repository: fhe-docker
+
+client:
+  image:
+    repository: your-company.jfrog.io/fhe-docker/fhe-client
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+    replicaCount: 1
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+    env:
+      - name: SERVER_URL
+        value: "http://fhe-server:8000"
+
+    ingress:
+      hosts:
+        - host: fhe-client-dev.your-domain.com
+          paths:
+            - path: /
+              pathType: Prefix

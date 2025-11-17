@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  fhe-client:
+    image: your-company.jfrog.io/fhe-docker/fhe-client:1.0.0
+    container_name: fhe-client
+    ports:
+      - "8501:8501"
+    environment:
+      - SERVER_URL=http://fhe-server:8000
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_HEADLESS=true
+    depends_on:
+      - fhe-server
+    networks:
+      - fhe-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  fhe-network:
+    driver: bridge
