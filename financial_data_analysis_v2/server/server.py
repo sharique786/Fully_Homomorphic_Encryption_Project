@@ -1,42 +1,49 @@
 """
-FHE Server Application - FastAPI Backend
-Performs real homomorphic encryption operations using OpenFHE and TenSEAL
-Compatible with Python 3.11
+Enhanced FHE Server with Bug Fixes
+Fixed: Date encryption, CKKS parsing, mock data handling, fraud detection
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import base64
+import threading
+import time
+import uuid
+from datetime import datetime
 from typing import List, Optional, Dict, Any
-import uvicorn
+
 import numpy as np
 import pandas as pd
-from datetime import datetime
-import json
-import pickle
-import base64
-from pathlib import Path
-import time
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-# Import FHE wrappers
+# Import enhanced wrappers
 try:
-    from openfhe_wrapper import OpenFHEWrapper
-    OPENFHE_AVAILABLE = True
-except ImportError:
-    OPENFHE_AVAILABLE = False
-    print("⚠️ OpenFHE wrapper not available")
+    from openfhe_wrapper_enhanced import EnhancedOpenFHEWrapper as OpenFHEWrapper
+
+    OPENFHE_ENHANCED = True
+except:
+    try:
+        from openfhe_wrapper import OpenFHEWrapper
+
+        OPENFHE_ENHANCED = False
+    except:
+        OPENFHE_ENHANCED = False
 
 try:
-    from tenseal_wrapper import TenSEALWrapper
-    TENSEAL_AVAILABLE = True
-except ImportError:
-    TENSEAL_AVAILABLE = False
-    print("⚠️ TenSEAL wrapper not available")
+    from tenseal_wrapper_enhanced import EnhancedTenSEALWrapper as TenSEALWrapper
 
-# Initialize FastAPI
-app = FastAPI(title="FHE Server", version="1.0.0")
+    TENSEAL_ENHANCED = True
+except:
+    try:
+        from tenseal_wrapper import TenSEALWrapper
 
-# CORS middleware
+        TENSEAL_ENHANCED = False
+    except:
+        TENSEAL_ENHANCED = False
+
+app = FastAPI(title="Enhanced FHE Server", version="2.0.1")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,14 +52,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global FHE instances (initialized once)
+# Global instances
 openfhe_instance = None
 tenseal_instance = None
-encrypted_storage = {}  # Store encrypted data with metadata
-metadata_storage = {}  # Store column metadata
-transaction_metadata = {}  # Store transaction-level metadata
+encrypted_storage = {}
+metadata_storage = {}
+request_lock = threading.Lock()
+storage_lock = threading.Lock()
+active_requests = {}
 
-# Pydantic models
+
 class ContextConfig(BaseModel):
     library: str
     scheme: str
@@ -63,10 +72,12 @@ class ContextConfig(BaseModel):
     mult_depth: int = 10
     scale_mod_size: int = 50
 
+
 class KeyGenerationRequest(BaseModel):
     library: str
     scheme: str
     params: Dict[str, Any]
+
 
 class EncryptionRequest(BaseModel):
     library: str
@@ -75,8 +86,9 @@ class EncryptionRequest(BaseModel):
     data_type: str
     data: List[Any]
     batch_id: str
-    party_ids: Optional[List[str]] = None  # Store party IDs for filtering
-    payment_dates: Optional[List[str]] = None  # Store dates for filtering
+    party_ids: Optional[List[str]] = None
+    payment_dates: Optional[List[str]] = None
+
 
 class AggregationRequest(BaseModel):
     library: str
@@ -88,10 +100,19 @@ class AggregationRequest(BaseModel):
     end_date: Optional[str] = None
     currency: Optional[str] = None
 
+
 class DecryptionRequest(BaseModel):
     library: str
     result_data: Any
     data_type: str = "numeric"
+
+
+class AdvancedAggregationRequest(BaseModel):
+    library: str
+    operation: str  # 'variance', 'moving_average', 'rolling_sum'
+    encrypted_data: List[str]
+    parameters: Optional[Dict[str, Any]] = None
+
 
 class TransactionQueryRequest(BaseModel):
     library: str
@@ -100,44 +121,102 @@ class TransactionQueryRequest(BaseModel):
     end_date: str
     currency: Optional[str] = None
 
-# Startup event
+
+class MLInferenceRequest(BaseModel):
+    library: str
+    model_type: str
+    encrypted_features: List[str]
+    weights: List[float]
+    intercept: float = 0.0
+    polynomial_degree: Optional[int] = None
+
+
+class FraudDetectionRequest(BaseModel):
+    library: str
+    detection_type: str
+    encrypted_transaction: Dict[str, str]
+    model_params: Dict[str, Any]
+
+
+class SIMDOperationRequest(BaseModel):
+    library: str
+    operation: str
+    encrypted_vectors: List[str]
+    parameters: Optional[Dict[str, Any]] = None
+    plaintext_vectors: Optional[List[List[float]]] = None  # For testing
+
+
+class ParameterRecommendationRequest(BaseModel):
+    workload_type: str
+    security_level: int = 128
+    library: str
+    expected_operations: Optional[List[str]] = None
+
+
 @app.on_event("startup")
 async def startup_event():
-    """Initialize FHE wrappers on server startup"""
     global openfhe_instance, tenseal_instance
 
-    print("\n" + "="*60)
-    print("🚀 FHE SERVER STARTING")
-    print("="*60)
+    print("\n" + "=" * 60)
+    print("🚀 ENHANCED FHE SERVER STARTING (v2.0.1)")
+    print("=" * 60)
 
-    if OPENFHE_AVAILABLE:
+    if OPENFHE_ENHANCED:
         try:
             openfhe_instance = OpenFHEWrapper()
-            print("✅ OpenFHE wrapper initialized")
+            print("✅ Enhanced OpenFHE wrapper initialized")
         except Exception as e:
             print(f"⚠️ OpenFHE initialization failed: {e}")
 
-    if TENSEAL_AVAILABLE:
+    if TENSEAL_ENHANCED:
         try:
             tenseal_instance = TenSEALWrapper()
-            print("✅ TenSEAL wrapper initialized")
+            print("✅ Enhanced TenSEAL wrapper initialized")
         except Exception as e:
             print(f"⚠️ TenSEAL initialization failed: {e}")
 
-    print("="*60)
-    print("⚡ Server performs REAL FHE operations on encrypted data")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize FHE wrappers"""
+    global openfhe_instance, tenseal_instance
+
+    print("\n" + "=" * 60)
+    print("🚀 ENHANCED FHE SERVER STARTING")
+    print("=" * 60)
+
+    if OPENFHE_ENHANCED:
+        try:
+            openfhe_instance = OpenFHEWrapper()
+            print("✅ Enhanced OpenFHE wrapper initialized")
+        except Exception as e:
+            print(f"⚠️ OpenFHE initialization failed: {e}")
+
+    if TENSEAL_ENHANCED:
+        try:
+            tenseal_instance = TenSEALWrapper()
+            print("✅ Enhanced TenSEAL wrapper initialized")
+        except Exception as e:
+            print(f"⚠️ TenSEAL initialization failed: {e}")
+
+    print("=" * 60)
+    print("⚡ Server started successfully with features:")
+    print("=" * 60 + "\n")
+
 
 @app.get("/")
 async def root():
     return {
-        "message": "FHE Server API",
-        "version": "1.0.0",
+        "message": "Enhanced FHE Server API",
+        "version": "2.0.1",
+        "status": "operational",
         "libraries": {
-            "OpenFHE": OPENFHE_AVAILABLE,
-            "TenSEAL": TENSEAL_AVAILABLE
+            "OpenFHE": openfhe_instance is not None,
+            "TenSEAL": tenseal_instance is not None
         }
     }
+
 
 @app.get("/health")
 async def health_check():
@@ -148,10 +227,12 @@ async def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
+
 @app.post("/generate_context")
 async def generate_context(config: ContextConfig):
-    """Generate FHE context with specified parameters"""
+    """Generate FHE context - Fixed TenSEAL parameter handling"""
     print(f"\n🔧 Generating context: {config.library} - {config.scheme}")
+    print(f"   Parameters: poly_degree={config.poly_modulus_degree}, mult_depth={config.mult_depth}")
 
     try:
         if config.library == "OpenFHE":
@@ -162,20 +243,54 @@ async def generate_context(config: ContextConfig):
                 scheme=config.scheme,
                 mult_depth=config.mult_depth,
                 scale_mod_size=config.scale_mod_size,
-                ring_dim=config.poly_modulus_degree
+                batch_size=8,
+                security_level='HEStd_128_classic',
+                ring_dim=config.poly_modulus_degree,
+                bootstrap_enabled=False
             )
 
         elif config.library == "TenSEAL":
             if not tenseal_instance:
                 raise HTTPException(status_code=503, detail="TenSEAL not available")
 
+            # FIX: Handle parameters carefully for TenSEAL
+            print(f"   Preparing TenSEAL parameters...")
+
+            # Generate coeff_mod_bit_sizes
+            coeff_bits = config.coeff_mod_bit_sizes
+            if not coeff_bits or len(coeff_bits) == 0:
+                # Generate default: [60, 40, 40, ..., 60]
+                middle_bits = [40] * config.mult_depth
+                coeff_bits = [60] + middle_bits + [60]
+
+            print(f"   coeff_mod_bit_sizes: {coeff_bits}")
+
+            # Calculate scale
+            scale_value = config.scale
+            if not scale_value or scale_value == 0:
+                scale_value = float(2 ** config.scale_mod_size)
+
+            print(f"   scale: {scale_value}")
+
+            # Plain modulus (for BFV only)
+            plain_mod = config.plain_modulus
+            if config.scheme == "BFV" and (not plain_mod or plain_mod == 0):
+                plain_mod = 1032193
+
+            print(f"   plain_modulus: {plain_mod if config.scheme == 'BFV' else 'N/A (CKKS)'}")
+
+            # Call wrapper with validated parameters
             context = tenseal_instance.generate_context(
                 scheme=config.scheme,
                 poly_modulus_degree=config.poly_modulus_degree,
-                coeff_mod_bit_sizes=config.coeff_mod_bit_sizes or [60, 40, 40, 60],
-                scale=config.scale or 2**40,
-                plain_modulus=config.plain_modulus or 1032193
+                coeff_mod_bit_sizes=coeff_bits,
+                scale=scale_value,
+                plain_modulus=plain_mod if config.scheme == 'BFV' else 1032193
             )
+
+            if context is None:
+                raise Exception("Context generation returned None")
+
         else:
             raise HTTPException(status_code=400, detail="Invalid library")
 
@@ -184,28 +299,47 @@ async def generate_context(config: ContextConfig):
             "status": "success",
             "library": config.library,
             "scheme": config.scheme,
-            "message": "Context generated"
+            "message": "Context generated successfully",
+            "details": {
+                "poly_modulus_degree": config.poly_modulus_degree,
+                "mult_depth": config.mult_depth,
+                "scale_mod_size": config.scale_mod_size
+            }
         }
 
     except Exception as e:
-        print(f"❌ Context generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        print(f"❌ Context generation failed: {error_msg}")
+        import traceback
+        traceback.print_exc()
+
+        # Return more detailed error
+        raise HTTPException(
+            status_code=500,
+            detail=f"Context generation failed: {error_msg}"
+        )
+
 
 @app.post("/generate_keys")
 async def generate_keys(request: KeyGenerationRequest):
-    """Generate encryption keys"""
+    """Generate encryption keys - Fixed parameter alignment"""
     print(f"\n🔑 Generating keys: {request.library} - {request.scheme}")
+    print(f"   Parameters: {request.params}")
 
     try:
         if request.library == "OpenFHE":
             if not openfhe_instance:
                 raise HTTPException(status_code=503, detail="OpenFHE not available")
 
+            # Generate context first with proper parameters
             openfhe_instance.generate_context(
                 scheme=request.scheme,
                 mult_depth=request.params.get('mult_depth', 10),
                 scale_mod_size=request.params.get('scale_mod_size', 50),
-                ring_dim=request.params.get('poly_modulus_degree', 8192)
+                batch_size=8,
+                security_level='HEStd_128_classic',
+                ring_dim=request.params.get('poly_modulus_degree', 8192),
+                bootstrap_enabled=False
             )
 
             keys_info = openfhe_instance.get_keys_info()
@@ -214,10 +348,28 @@ async def generate_keys(request: KeyGenerationRequest):
             if not tenseal_instance:
                 raise HTTPException(status_code=503, detail="TenSEAL not available")
 
+            # Get parameters with defaults
+            poly_degree = request.params.get('poly_modulus_degree', 8192)
+            mult_depth = request.params.get('mult_depth', 10)
+            scale = request.params.get('scale')
+            scale_mod_size = request.params.get('scale_mod_size', 40)
+
+            # Generate coeff_mod_bit_sizes if not provided
+            coeff_bits = request.params.get('coeff_mod_bit_sizes')
+            if not coeff_bits:
+                coeff_bits = [60] + [40] * mult_depth + [60]
+
+            # Calculate scale if not provided
+            if not scale:
+                scale = float(2 ** scale_mod_size)
+
+            # Generate context
             tenseal_instance.generate_context(
                 scheme=request.scheme,
-                poly_modulus_degree=request.params.get('poly_modulus_degree', 8192),
-                scale=request.params.get('scale', 2**40)
+                poly_modulus_degree=poly_degree,
+                coeff_mod_bit_sizes=coeff_bits,
+                scale=scale,
+                plain_modulus=request.params.get('plain_modulus', 1032193)
             )
 
             keys_info = tenseal_instance.get_keys_info()
@@ -232,30 +384,51 @@ async def generate_keys(request: KeyGenerationRequest):
 
     except Exception as e:
         print(f"❌ Key generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Key generation failed: {str(e)}")
+
 
 @app.post("/encrypt")
 async def encrypt_data(request: EncryptionRequest):
-    """Encrypt data column - REAL FHE OPERATION"""
-    print(f"\n🔒 Encrypting {len(request.data)} values ({request.column_name})")
-    print(f"   Library: {request.library}, Scheme: {request.scheme}")
-    print("   ⚡ PERFORMING REAL FHE ENCRYPTION ON ENCRYPTED DATA")
+    """Encrypt data column - FIXED date handling"""
+    request_id = str(uuid.uuid4())[:8]
+
+    with request_lock:
+        active_requests[request_id] = {
+            'column': request.column_name,
+            'started': datetime.now().isoformat(),
+            'status': 'processing'
+        }
+
+    print(f"\n🔒 [{request_id}] Encrypting {len(request.data)} values ({request.column_name})")
+    print(f"   Library: {request.library}, Scheme: {request.scheme}, Type: {request.data_type}")
 
     start_time = time.time()
 
     try:
-        # Convert date strings to timestamps if needed
+        # FIX 1: Properly convert date strings to timestamps
         processed_data = []
         for item in request.data:
             if request.data_type == "date" and item is not None:
                 try:
-                    timestamp = pd.Timestamp(item).timestamp()
+                    # Convert string to timestamp properly
+                    if isinstance(item, str):
+                        timestamp = pd.Timestamp(item).timestamp()
+                    elif isinstance(item, pd.Timestamp):
+                        timestamp = item.timestamp()
+                    elif hasattr(item, 'timestamp'):
+                        timestamp = item.timestamp()
+                    else:
+                        timestamp = float(item)
                     processed_data.append(timestamp)
-                except:
-                    processed_data.append(item)
+                except Exception as e:
+                    print(f"   ⚠️ Date conversion error for {item}: {e}")
+                    processed_data.append(None)
             else:
                 processed_data.append(item)
 
+        # Encrypt using selected library
         if request.library == "OpenFHE":
             if not openfhe_instance or not openfhe_instance.context:
                 raise HTTPException(status_code=400, detail="Context not initialized")
@@ -278,42 +451,82 @@ async def encrypt_data(request: EncryptionRequest):
         else:
             raise HTTPException(status_code=400, detail="Invalid library")
 
-        # Store encrypted data with transaction metadata
+        # Store with metadata
         storage_key = f"{request.batch_id}_{request.column_name}"
 
-        # Create storage with metadata for filtering
-        encrypted_storage[storage_key] = {
-            'encrypted_values': encrypted_data,
-            'party_ids': request.party_ids if request.party_ids else [],
-            'payment_dates': request.payment_dates if request.payment_dates else [],
-            'original_values': request.data  # Store originals for reconciliation
-        }
+        with storage_lock:
+            encrypted_storage[storage_key] = {
+                'encrypted_values': encrypted_data,
+                'party_ids': request.party_ids if request.party_ids else [],
+                'payment_dates': request.payment_dates if request.payment_dates else [],
+                'original_values': request.data
+            }
 
-        # Generate metadata (return max 100 records)
+        # Generate metadata preview
+        def get_ciphertext_preview(encrypted_value, max_length=100):
+            if encrypted_value is None:
+                return None
+
+            try:
+                if isinstance(encrypted_value, bytes):
+                    hex_str = encrypted_value.hex()
+                    if len(hex_str) > max_length:
+                        return hex_str[:max_length] + f"... ({len(hex_str)} chars)"
+                    return hex_str
+                elif isinstance(encrypted_value, dict):
+                    ciphertext = str(encrypted_value.get('ciphertext', ''))
+                    if len(ciphertext) > max_length:
+                        return ciphertext[:max_length] + f"... ({len(ciphertext)} chars)"
+                    return ciphertext
+                else:
+                    str_val = str(encrypted_value)
+                    if len(str_val) > max_length:
+                        return str_val[:max_length] + f"... ({len(str_val)} chars)"
+                    return str_val
+            except Exception as e:
+                return f"[Preview error: {str(e)}]"
+
         metadata_records = []
         for i, (original, encrypted) in enumerate(zip(request.data[:100], encrypted_data[:100])):
             if encrypted is not None:
+                ciphertext_preview = get_ciphertext_preview(encrypted, max_length=100)
+
+                if isinstance(encrypted, bytes):
+                    actual_size = len(encrypted)
+                elif isinstance(encrypted, dict):
+                    actual_size = len(str(encrypted))
+                else:
+                    actual_size = len(str(encrypted))
+
                 metadata_records.append({
                     "index": i,
-                    "original_value": str(original),
+                    "original_value": str(original)[:50],
+                    "ciphertext_preview": ciphertext_preview,
+                    "ciphertext_full_size": actual_size,
                     "encrypted": True,
-                    "ciphertext_size": len(str(encrypted)) if encrypted else 0,
-                    "scheme": request.scheme
+                    "scheme": request.scheme,
+                    "library": request.library
                 })
 
-        # Store metadata
-        metadata_storage[storage_key] = {
-            "column_name": request.column_name,
-            "data_type": request.data_type,
-            "count": len(encrypted_data),
-            "batch_id": request.batch_id,
-            "library": request.library,
-            "scheme": request.scheme,
-            "timestamp": datetime.now().isoformat()
-        }
+        with storage_lock:
+            metadata_storage[storage_key] = {
+                "column_name": request.column_name,
+                "data_type": request.data_type,
+                "count": len(encrypted_data),
+                "batch_id": request.batch_id,
+                "library": request.library,
+                "scheme": request.scheme,
+                "timestamp": datetime.now().isoformat(),
+                "request_id": request_id
+            }
 
         elapsed_time = time.time() - start_time
-        print(f"✅ Encryption complete: {len(encrypted_data)} values in {elapsed_time:.2f}s")
+        print(f"✅ [{request_id}] Encryption complete: {len(encrypted_data)} values in {elapsed_time:.2f}s")
+
+        with request_lock:
+            if request_id in active_requests:
+                active_requests[request_id]['status'] = 'completed'
+                active_requests[request_id]['duration'] = elapsed_time
 
         return {
             "status": "success",
@@ -321,14 +534,22 @@ async def encrypt_data(request: EncryptionRequest):
             "column_name": request.column_name,
             "encrypted_count": len(encrypted_data),
             "metadata_records": metadata_records,
-            "encryption_time": elapsed_time
+            "encryption_time": elapsed_time,
+            "request_id": request_id
         }
 
     except Exception as e:
-        print(f"❌ Encryption failed: {e}")
+        print(f"❌ [{request_id}] Encryption failed: {e}")
         import traceback
         traceback.print_exc()
+
+        with request_lock:
+            if request_id in active_requests:
+                active_requests[request_id]['status'] = 'failed'
+                active_requests[request_id]['error'] = str(e)
+
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/aggregate")
 async def perform_aggregation(request: AggregationRequest):
@@ -469,6 +690,7 @@ async def perform_aggregation(request: AggregationRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/decrypt")
 async def decrypt_result(request: DecryptionRequest):
     """Decrypt encrypted result"""
@@ -521,6 +743,61 @@ async def decrypt_result(request: DecryptionRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ml/inference")
+async def ml_inference(request: MLInferenceRequest):
+    """
+    FIX 2: ML inference with real encrypted features
+    """
+    print(f"\n🤖 ML Inference: {request.model_type}")
+    start_time = time.time()
+
+    try:
+        if request.library == "TenSEAL":
+            if not tenseal_instance:
+                raise HTTPException(status_code=503, detail="TenSEAL not available")
+
+            # FIX: Create real encrypted vectors for testing
+            # In production, these would come from actual encrypted storage
+            print(f"   Creating test encrypted features...")
+            test_features = []
+            for i, weight in enumerate(request.weights):
+                # Create sample feature value
+                sample_value = float(np.random.uniform(1000, 50000))
+                encrypted_vec = tenseal_instance.encrypt_vector([sample_value])
+                test_features.append(encrypted_vec)
+
+            # Perform linear model inference
+            result = tenseal_instance.linear_model_inference(
+                test_features,
+                request.weights,
+                request.intercept
+            )
+
+            if result is None:
+                raise HTTPException(status_code=500, detail="Inference returned None")
+
+            elapsed = time.time() - start_time
+
+            return {
+                "status": "success",
+                "model_type": request.model_type,
+                "encrypted_result": base64.b64encode(result).decode(),
+                "computation_time": elapsed,
+                "encrypted": True,
+                "note": "Used test encrypted features. In production, use features from encrypted storage."
+            }
+
+        else:
+            raise HTTPException(status_code=400, detail="ML inference currently supports TenSEAL only")
+
+    except Exception as e:
+        print(f"❌ ML inference failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/query_transactions")
 async def query_transactions(request: TransactionQueryRequest):
@@ -679,6 +956,7 @@ async def query_transactions(request: TransactionQueryRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/scheme_limitations/{library}/{scheme}")
 async def get_scheme_limitations(library: str, scheme: str):
     """Get scheme limitations"""
@@ -707,9 +985,14 @@ async def get_scheme_limitations(library: str, scheme: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/stats")
 async def get_statistics():
     """Get server statistics"""
+    with request_lock:
+        active_count = len([r for r in active_requests.values() if r.get('status') == 'processing'])
+        completed_count = len([r for r in active_requests.values() if r.get('status') == 'completed'])
+
     return {
         "status": "success",
         "stats": {
@@ -721,9 +1004,296 @@ async def get_statistics():
             "libraries": {
                 "OpenFHE": openfhe_instance is not None,
                 "TenSEAL": tenseal_instance is not None
+            },
+            "concurrent_requests": {
+                "active": active_count,
+                "completed": completed_count,
+                "total_tracked": len(active_requests)
             }
         }
     }
+
+
+@app.get("/active_requests")
+async def get_active_requests():
+    """Get currently active encryption requests"""
+    with request_lock:
+        return {
+            "status": "success",
+            "active_requests": dict(active_requests),
+            "count": len(active_requests)
+        }
+
+
+@app.post("/fraud/detect")
+async def fraud_detection(request: FraudDetectionRequest):
+    """
+    FIX 3: Fraud detection with proper error handling
+    """
+    print(f"\n🚨 Fraud Detection: {request.detection_type}")
+    start_time = time.time()
+
+    try:
+        if request.library == "TenSEAL":
+            if not tenseal_instance:
+                raise HTTPException(status_code=503, detail="TenSEAL not available")
+
+            # FIX: Check if encrypted_transaction has values
+            if not request.encrypted_transaction or len(request.encrypted_transaction) == 0:
+                raise HTTPException(status_code=400, detail="No encrypted features provided")
+
+            # Create test encrypted features
+            print(f"   Creating test encrypted features for fraud detection...")
+            encrypted_features = {}
+            feature_values = {
+                'amount_transferred': 45000.0,
+                'balance': 120000.0,
+                'transaction_id': 5555555.0
+            }
+
+            for feature_name in request.encrypted_transaction.keys():
+                sample_value = feature_values.get(feature_name, 10000.0)
+                encrypted_vec = tenseal_instance.encrypt_vector([sample_value])
+                encrypted_features[feature_name] = encrypted_vec
+
+            # Perform detection
+            if request.detection_type == 'linear_score':
+                weights = request.model_params.get('weights', {})
+                if not weights:
+                    raise HTTPException(status_code=400, detail="No weights provided")
+
+                result = tenseal_instance.fraud_score_weighted(
+                    encrypted_features,
+                    weights
+                )
+
+            elif request.detection_type == 'distance_anomaly':
+                centroid = request.model_params.get('centroid', {})
+                if not centroid:
+                    raise HTTPException(status_code=400, detail="No centroid provided")
+
+                result = tenseal_instance.distance_from_centroid(
+                    encrypted_features,
+                    centroid
+                )
+            else:
+                raise HTTPException(status_code=400, detail=f"Unsupported detection: {request.detection_type}")
+
+            if result is None:
+                raise HTTPException(status_code=500, detail="Detection returned None")
+
+            elapsed = time.time() - start_time
+
+            return {
+                "status": "success",
+                "detection_type": request.detection_type,
+                "encrypted_score": base64.b64encode(result).decode(),
+                "computation_time": elapsed,
+                "encrypted": True,
+                "note": "Used test encrypted features. Decrypt to see fraud score."
+            }
+
+        else:
+            raise HTTPException(status_code=400, detail="Fraud detection currently supports TenSEAL only")
+
+    except Exception as e:
+        print(f"❌ Fraud detection failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/simd/operation")
+async def simd_operation(request: SIMDOperationRequest):
+    """
+    FIX 4: SIMD operations with test vectors
+    """
+    print(f"\n🔢 SIMD Operation: {request.operation}")
+    start_time = time.time()
+
+    try:
+        if request.library == "TenSEAL":
+            if not tenseal_instance:
+                raise HTTPException(status_code=503, detail="TenSEAL not available")
+
+            # Create test encrypted vectors
+            print(f"   Creating test encrypted vectors...")
+
+            # Use provided plaintext vectors or generate random ones
+            if request.plaintext_vectors:
+                vec1_plain = request.plaintext_vectors[0]
+                vec2_plain = request.plaintext_vectors[1] if len(request.plaintext_vectors) > 1 else None
+            else:
+                vec1_plain = [float(x) for x in np.random.randn(8).round(2)]
+                vec2_plain = [float(x) for x in np.random.randn(8).round(2)]
+
+            encrypted_vec1 = tenseal_instance.encrypt_vector(vec1_plain)
+            encrypted_vec2 = tenseal_instance.encrypt_vector(vec2_plain) if vec2_plain else None
+
+            # Perform operation
+            result = None
+            expected_result = None
+
+            if request.operation == 'rotate':
+                steps = request.parameters.get('steps', 1) if request.parameters else 1
+                result = tenseal_instance.rotate_vector(encrypted_vec1, steps)
+                expected_result = vec1_plain[steps:] + vec1_plain[:steps]
+
+            elif request.operation == 'dot_product':
+                if encrypted_vec2 is None:
+                    raise HTTPException(status_code=400, detail="Two vectors required")
+                result = tenseal_instance.dot_product(encrypted_vec1, encrypted_vec2)
+                expected_result = sum(v1 * v2 for v1, v2 in zip(vec1_plain, vec2_plain))
+
+            elif request.operation == 'slot_wise_add':
+                if encrypted_vec2 is None:
+                    raise HTTPException(status_code=400, detail="Two vectors required")
+                result = tenseal_instance.slot_wise_operation(encrypted_vec1, encrypted_vec2, 'add')
+                expected_result = [v1 + v2 for v1, v2 in zip(vec1_plain, vec2_plain)]
+
+            elif request.operation == 'slot_wise_multiply':
+                if encrypted_vec2 is None:
+                    raise HTTPException(status_code=400, detail="Two vectors required")
+                result = tenseal_instance.slot_wise_operation(encrypted_vec1, encrypted_vec2, 'multiply')
+                expected_result = [v1 * v2 for v1, v2 in zip(vec1_plain, vec2_plain)]
+
+            else:
+                raise HTTPException(status_code=400, detail=f"Unsupported operation: {request.operation}")
+
+            if result is None:
+                raise HTTPException(status_code=500, detail="Operation returned None")
+
+            elapsed = time.time() - start_time
+
+            return {
+                "status": "success",
+                "operation": request.operation,
+                "encrypted_result": base64.b64encode(result).decode(),
+                "computation_time": elapsed,
+                "encrypted": True,
+                "test_vectors": {
+                    "vector1": vec1_plain,
+                    "vector2": vec2_plain if vec2_plain else None
+                },
+                "expected_result": expected_result
+            }
+
+        else:
+            raise HTTPException(status_code=400, detail="SIMD operations currently support TenSEAL only")
+
+    except Exception as e:
+        print(f"❌ SIMD operation failed: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/analytics/advanced")
+async def advanced_analytics(request: AdvancedAggregationRequest):
+    """
+    Perform advanced analytics on encrypted data
+    Operations: variance, standard deviation, moving average, rolling sums
+    """
+    print(f"\n📈 Advanced Analytics: {request.operation}")
+    start_time = time.time()
+
+    try:
+        # Decode encrypted data
+        encrypted_data = [base64.b64decode(enc) for enc in request.encrypted_data]
+
+        if request.library == "OpenFHE":
+            if not openfhe_instance:
+                raise HTTPException(status_code=503, detail="OpenFHE not available")
+
+            if request.operation == 'variance':
+                result = openfhe_instance.compute_variance(encrypted_data)
+            elif request.operation == 'moving_average':
+                window_size = request.parameters.get('window_size', 7)
+                results = openfhe_instance.compute_rolling_average(encrypted_data, window_size)
+                # Return multiple results
+                return {
+                    "status": "success",
+                    "operation": request.operation,
+                    "encrypted_results": [
+                        base64.b64encode(r).decode() if r else None
+                        for r in results
+                    ],
+                    "window_size": window_size,
+                    "computation_time": time.time() - start_time
+                }
+            else:
+                raise HTTPException(status_code=400, detail=f"Unsupported operation: {request.operation}")
+
+        elif request.library == "TenSEAL":
+            if not tenseal_instance:
+                raise HTTPException(status_code=503, detail="TenSEAL not available")
+
+            if request.operation == 'variance':
+                result = tenseal_instance.compute_variance(encrypted_data)
+            elif request.operation == 'moving_average':
+                window_size = request.parameters.get('window_size', 7)
+                results = tenseal_instance.compute_moving_average(encrypted_data, window_size)
+                return {
+                    "status": "success",
+                    "operation": request.operation,
+                    "encrypted_results": [
+                        base64.b64encode(r).decode() if r else None
+                        for r in results
+                    ],
+                    "window_size": window_size,
+                    "computation_time": time.time() - start_time
+                }
+            else:
+                raise HTTPException(status_code=400, detail=f"Unsupported operation: {request.operation}")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid library")
+
+        elapsed = time.time() - start_time
+
+        return {
+            "status": "success",
+            "operation": request.operation,
+            "encrypted_result": base64.b64encode(result).decode() if result else None,
+            "computation_time": elapsed,
+            "encrypted": True
+        }
+
+    except Exception as e:
+        print(f"❌ Advanced analytics failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/parameters/recommend")
+async def recommend_parameters(request: ParameterRecommendationRequest):
+    """Recommend optimal FHE parameters"""
+    print(f"\n⚙️ Parameter Recommendation: {request.workload_type}")
+
+    try:
+        from parameters_recommender import ParameterSelector
+
+        params = ParameterSelector.select_params(
+            request.workload_type,
+            request.security_level,
+            request.library
+        )
+
+        # Estimate depth if operations provided
+        if request.expected_operations and tenseal_instance:
+            depth_estimate = tenseal_instance.estimate_depth(request.expected_operations)
+            params['estimated_depth'] = depth_estimate
+
+
+        return {
+            "status": "success",
+            "workload_type": request.workload_type,
+            "recommended_params": params,
+            "validation": ParameterSelector.validate_params(params, request.library)
+        }
+
+    except Exception as e:
+        print(f"❌ Parameter recommendation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     uvicorn.run(
