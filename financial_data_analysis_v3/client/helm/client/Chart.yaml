@@ -1,0 +1,32 @@
+# fhe-client/Chart.yaml
+apiVersion: v2
+name: fhe-client
+description: FHE Client Application - Streamlit Frontend for Homomorphic Encryption
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - fhe
+  - encryption
+  - homomorphic
+  - streamlit
+  - frontend
+  - client
+  - ui
+
+maintainers:
+  - name: FHE Client Team
+    email: client-team@example.com
+
+home: https://github.com/yourorg/fhe-client
+sources:
+  - https://github.com/yourorg/fhe-client
+
+icon: https://example.com/fhe-client-icon.png
+
+dependencies: []
+
+annotations:
+  category: Security
+  licenses: Apache-2.0

@@ -1,0 +1,33 @@
+# fhe-server/Chart.yaml
+apiVersion: v2
+name: fhe-server
+description: FHE Server Application - FastAPI Backend for Homomorphic Encryption Operations
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - fhe
+  - encryption
+  - homomorphic
+  - fastapi
+  - backend
+  - server
+  - tenseal
+  - openfhe
+
+maintainers:
+  - name: FHE Server Team
+    email: server-team@example.com
+
+home: https://github.com/yourorg/fhe-server
+sources:
+  - https://github.com/yourorg/fhe-server
+
+icon: https://example.com/fhe-server-icon.png
+
+dependencies: []
+
+annotations:
+  category: Security
+  licenses: Apache-2.0
